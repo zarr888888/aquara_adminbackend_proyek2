@@ -22,6 +22,7 @@ class User extends Authenticatable
         'name',
         'email',
         'phone',
+        'google_id',
         'password',
         'foto_profil',    
         'fokus_budidaya', 

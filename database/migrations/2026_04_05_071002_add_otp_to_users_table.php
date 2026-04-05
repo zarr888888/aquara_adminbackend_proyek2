@@ -6,20 +6,18 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
-   public function up(): void
+    public function up(): void
     {
         Schema::table('users', function (Blueprint $table) {
-            $table->string('phone')->unique()->nullable()->after('email');
+            $table->string('otp')->nullable()->after('password');
+            $table->timestamp('otp_expired_at')->nullable()->after('otp');
         });
     }
 
-    public function down(): void
+    public function up_down(): void
     {
         Schema::table('users', function (Blueprint $table) {
-            $table->dropColumn('phone');
+            $table->dropColumn(['otp', 'otp_expired_at']);
         });
     }
 };

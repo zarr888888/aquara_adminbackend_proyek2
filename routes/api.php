@@ -35,6 +35,9 @@ Route::post('/pasars/{id}/update', [PasarController::class, 'update']);
 
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
+Route::post('/google-login', [AuthController::class, 'googleLogin']);
+Route::post('/send-otp-wa', [AuthController::class, 'sendOtpWhatsapp']);
+Route::post('/verify-otp-wa', [AuthController::class, 'verifyOtpWhatsapp']);
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::post('/profil/update', [AuthController::class, 'updateProfile']);

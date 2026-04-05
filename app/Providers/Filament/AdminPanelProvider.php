@@ -26,7 +26,9 @@ class AdminPanelProvider extends PanelProvider
             ->default()
             ->id('admin')
             ->path('admin')
-            ->brandName('AQUARA')
+            ->brandLogo(asset('images/logo2.png')) 
+            ->brandLogoHeight('3rem')           
+            ->favicon(asset('images/logo.png'))
             ->login()
             ->colors([
                         'primary' => '#009FE3', 
@@ -36,7 +38,7 @@ class AdminPanelProvider extends PanelProvider
                         'gray' => Color::Zinc,
             ])
             ->spa()
-            ->darkMode(false)
+            ->darkMode(true)
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\\Filament\\Resources')
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\\Filament\\Pages')
             ->pages([

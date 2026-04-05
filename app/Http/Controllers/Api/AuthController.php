@@ -7,15 +7,16 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Str;
 
 class AuthController extends Controller
 {
     public function register(Request $request)
     {
         $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|string|email|unique:users|nullable',
-            'phone' => 'required|string|unique:users|nullable',
+            'name'     => 'required|string|max:255',
+            'email'    => 'nullable|string|email|unique:users,email', 
+            'phone'    => 'required|string|min:10|max:15|unique:users,phone',
             'password' => 'required|string|min:6',
         ]);
 
@@ -159,6 +160,132 @@ class AuthController extends Controller
         return response()->json([
             'success' => true, 
             'message' => 'Akun berhasil dihapus permanen.'
+        ], 200);
+    }
+
+    public function googleLogin(Request $request)
+    {
+        $request->validate([
+            'email' => 'required|email',
+            'name' => 'required|string',
+            'google_id' => 'required|string',
+        ]);
+
+        $user = User::where('email', $request->email)->first();
+
+        if (!$user) {
+            $user = User::create([
+                'name' => $request->name,
+                'email' => $request->email,
+                'google_id' => $request->google_id,
+                'password'  => \Illuminate\Support\Facades\Hash::make(\Illuminate\Support\Str::random(24)), 
+                'phone'     => 'GGL-' . time() . rand(10, 99),
+            ]);
+        } else {
+            if (empty($user->google_id)) {
+                $user->update(['google_id' => $request->google_id]);
+            }
+        }
+
+        $token = $user->createToken('auth_token')->plainTextToken;
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Login Google Berhasil!',
+            'data' => $user,
+            'token' => $token
+        ], 200);
+    }
+
+    // FUNGSI KIRIM OTP WHATSAPP 
+    public function sendOtpWhatsapp(Request $request)
+    {
+        try {
+            $request->validate(['phone' => 'required']);
+            $phone = $request->phone;
+
+            $user = User::where('phone', $phone)->first();
+
+            if (!$user) {
+                $user = new User(); 
+                $user->name = 'Pengguna AQUARA';
+                $user->phone = $phone;
+                $user->email = 'wa_' . time() . '@aquara.com';
+                $user->password = Hash::make(Str::random(24));
+                $user->save();
+            }
+
+            $otp = rand(100000, 999999);
+
+            $user->otp = $otp;
+            $user->otp_expired_at = now()->addMinutes(5);
+            $user->save();
+
+            $curl = curl_init();
+            curl_setopt_array($curl, array(
+                CURLOPT_URL => 'https://api.fonnte.com/send',
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_CUSTOMREQUEST => 'POST',
+                CURLOPT_POSTFIELDS => array(
+                    'target' => $phone,
+                    'message' => "*AQUARA LOGIN*\n\nKode OTP Anda adalah: *$otp*\n\nKode ini berlaku selama 5 menit.",
+                ),
+                CURLOPT_HTTPHEADER => array(
+                    'Authorization: fRRqe1s757GduhxXCMfh' //
+                ),
+            ));
+
+            curl_exec($curl);
+            curl_close($curl);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Kode OTP berhasil dikirim ke WhatsApp!'
+            ], 200);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Terjadi kesalahan di server: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    // FUNGSI VERIFIKASI OTP WHATSAPP
+    public function verifyOtpWhatsapp(Request $request)
+    {
+        $request->validate([
+            'phone' => 'required',
+            'otp' => 'required'
+        ]);
+
+        $user = User::where('phone', $request->phone)->first();
+
+        if (!$user || (string)$user->otp !== (string)$request->otp) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Kode OTP salah. Silakan periksa kembali.'
+            ], 401);
+        }
+
+        if (now()->greaterThan($user->otp_expired_at)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Kode OTP sudah kadaluarsa. Silakan minta kode baru.'
+            ], 401);
+        }
+
+        $user->otp = null;
+        $user->otp_expired_at = null;
+        $user->save();
+
+        $token = $user->createToken('auth_token')->plainTextToken;
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Login WhatsApp Berhasil!',
+            'data' => $user,
+            'token' => $token
         ], 200);
     }
 }
