@@ -20,7 +20,7 @@ RUN apk add --no-cache \
     libpng \
     libzip \
     icu-libs \
-    oniguruma \
+    oniguruma-dev \
     bash
 
 RUN docker-php-ext-install \
