@@ -1,4 +1,3 @@
-# Dockerfile
 FROM php:8.2-fpm-alpine
 
 # Install dependencies sistem
@@ -27,21 +26,24 @@ RUN docker-php-ext-install \
     opcache \
     zip
 
-# Install Composer
-COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+# Install composer
+COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
 WORKDIR /var/www/html
 
-# Copy file project
+# Copy composer dulu supaya cache docker optimal
+COPY composer.json composer.lock ./
+
+RUN composer install --no-dev --optimize-autoloader --no-interaction
+
+# Copy semua project
 COPY . .
 
-# Install dependencies Laravel
-RUN composer install --optimize-autoloader --no-dev
+# Permission Laravel
+RUN chmod -R 775 storage bootstrap/cache
+RUN chown -R www-data:www-data storage bootstrap/cache
 
-# Set permission
-RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
-
-# Copy konfigurasi Nginx dan Supervisor
+# Copy konfigurasi nginx dan supervisor
 COPY docker/nginx.conf /etc/nginx/nginx.conf
 COPY docker/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
