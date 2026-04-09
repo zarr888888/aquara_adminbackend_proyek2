@@ -1,0 +1,25 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+
+class AiConsultation extends Model
+{
+    use HasFactory;
+
+    protected $fillable = [
+        'user_id',
+        'image_path',
+        'disease_detected',
+        'water_quality_status',
+        'solution',
+        'raw_ai_response',
+    ];
+
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
+}
