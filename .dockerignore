@@ -1,9 +1,7 @@
 .git
 .gitignore
-.env
 node_modules
 vendor
-npm-debug.log
-docker-compose.yml
-Dockerfile
+storage/logs
 tests
+.env

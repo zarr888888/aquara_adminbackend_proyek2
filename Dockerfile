@@ -1,36 +1,11 @@
-FROM php:8.3-fpm
+FROM composer:2 AS builder
 
-RUN apt-get update && apt-get install -y \
-    git \
-    curl \
-    zip \
-    unzip \
-    nodejs \
-    npm \
-    libpng-dev \
-    libonig-dev \
-    libxml2-dev \
-    libzip-dev \
-    libicu-dev
+WORKDIR /app
 
-RUN docker-php-ext-install \
-    pdo_mysql \
-    mbstring \
-    exif \
-    pcntl \
-    bcmath \
-    gd \
-    zip \
-    intl
+# Copy composer file
+COPY composer.json composer.lock ./
 
-COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
-
-WORKDIR /var/www/html
-
-COPY . .
-
-ENV COMPOSER_MEMORY_LIMIT=-1
-
+# Install dependency tanpa dev
 RUN composer install \
     --no-dev \
     --prefer-dist \
@@ -38,8 +13,37 @@ RUN composer install \
     --no-progress \
     --no-scripts
 
-RUN chmod -R 775 storage bootstrap/cache
+# Copy seluruh project
+COPY . .
+
+RUN php artisan config:cache && \
+    php artisan route:cache && \
+    php artisan view:cache
+
+FROM php:8.3-fpm-alpine
+
+# Install library yang dibutuhkan
+RUN apk add --no-cache \
+    libpng \
+    libzip \
+    icu-libs \
+    oniguruma
+
+# Install extension PHP
+RUN docker-php-ext-install \
+    pdo_mysql \
+    mbstring \
+    bcmath \
+    zip
+
+WORKDIR /var/www/html
+
+# Copy vendor dari stage builder
+COPY --from=builder /app /var/www/html
+
+# Permission Laravel
+RUN chown -R www-data:www-data storage bootstrap/cache
 
 EXPOSE 8000
 
-CMD php artisan serve --host=0.0.0.0 --port=8000
+CMD ["php", "artisan", "serve", "--host=0.0.0.0", "--port=8000"]
