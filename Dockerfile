@@ -16,16 +16,15 @@ COPY . .
 
 FROM php:8.3-fpm-alpine
 
-# install dependency untuk compile extension
 RUN apk add --no-cache \
     $PHPIZE_DEPS \
+    pkgconfig \
     libpng-dev \
     libzip-dev \
     oniguruma-dev \
     icu-dev \
     bash
 
-# install extension php
 RUN docker-php-ext-install \
     pdo_mysql \
     mbstring \
