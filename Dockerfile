@@ -1,4 +1,3 @@
-# Dockerfile
 FROM php:8.2-fpm-alpine
 
 # Install dependencies sistem
@@ -35,11 +34,14 @@ WORKDIR /var/www/html
 # Copy file project
 COPY . .
 
+# Buat file env Laravel
+RUN cp .env.example .env
+
 # Install dependencies Laravel
 RUN composer install --optimize-autoloader --no-dev
 
-# Set permission
-RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
+# Permission Laravel
+RUN chmod -R 777 storage bootstrap/cache
 
 # Copy konfigurasi Nginx dan Supervisor
 COPY docker/nginx.conf /etc/nginx/nginx.conf
