@@ -41,6 +41,10 @@ RUN cp .env.example .env
 # Install dependencies Laravel
 RUN composer install --no-interaction --prefer-dist --optimize-autoloader
 
+# Laravel setup
+RUN php artisan key:generate
+RUN php artisan config:cache
+
 # Set permission
 RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
 
