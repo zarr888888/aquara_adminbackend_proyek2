@@ -1,6 +1,6 @@
 FROM php:8.2-fpm-alpine
 
-# Install dependencies sistem
+# Install system dependencies
 RUN apk add --no-cache \
     nginx \
     nodejs \
@@ -15,38 +15,41 @@ RUN apk add --no-cache \
     oniguruma-dev \
     libxml2-dev
 
-# Install ekstensi PHP
+# Install PHP extensions
 RUN docker-php-ext-install \
     pdo_mysql \
+    mysqli \
     mbstring \
-    exif \
-    pcntl \
+    tokenizer \
+    xml \
+    ctype \
+    fileinfo \
     bcmath \
     gd \
-    opcache \
-    zip
+    zip \
+    opcache
 
 # Install composer
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
 WORKDIR /var/www/html
 
-# Copy composer dulu supaya cache docker optimal
+# copy composer dulu
 COPY composer.json composer.lock ./
 
 RUN composer install --no-dev --optimize-autoloader --no-interaction
 
-# Copy semua project
+# copy project
 COPY . .
 
-# Permission Laravel
+# permission laravel
 RUN chmod -R 775 storage bootstrap/cache
 RUN chown -R www-data:www-data storage bootstrap/cache
 
-# Copy konfigurasi nginx dan supervisor
+# nginx & supervisor
 COPY docker/nginx.conf /etc/nginx/nginx.conf
 COPY docker/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
 EXPOSE 80
 
-CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
+CMD ["/usr/bin/supervisord","-c","/etc/supervisor/conf.d/supervisord.conf"]
