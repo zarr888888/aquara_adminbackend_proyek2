@@ -1,6 +1,6 @@
 FROM php:8.2-fpm-alpine
 
-# Install system dependencies
+# install dependencies sistem
 RUN apk add --no-cache \
     nginx \
     nodejs \
@@ -11,11 +11,18 @@ RUN apk add --no-cache \
     git \
     supervisor \
     libpng-dev \
+    libjpeg-turbo-dev \
+    freetype-dev \
     libzip-dev \
     oniguruma-dev \
     libxml2-dev
 
-# Install PHP extensions
+# konfigurasi gd
+RUN docker-php-ext-configure gd \
+    --with-freetype \
+    --with-jpeg
+
+# install extension php
 RUN docker-php-ext-install \
     pdo_mysql \
     mysqli \
@@ -23,13 +30,12 @@ RUN docker-php-ext-install \
     tokenizer \
     xml \
     ctype \
-    fileinfo \
     bcmath \
     gd \
     zip \
     opcache
 
-# Install composer
+# install composer
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
 WORKDIR /var/www/html
@@ -46,7 +52,7 @@ COPY . .
 RUN chmod -R 775 storage bootstrap/cache
 RUN chown -R www-data:www-data storage bootstrap/cache
 
-# nginx & supervisor
+# nginx dan supervisor
 COPY docker/nginx.conf /etc/nginx/nginx.conf
 COPY docker/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
