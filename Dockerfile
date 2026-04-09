@@ -1,35 +1,24 @@
-FROM php:8.2-fpm-alpine
+FROM php:8.2-fpm
 
-# install dependencies sistem
-RUN apk add --no-cache \
+# install dependencies
+RUN apt-get update && apt-get install -y \
     nginx \
-    nodejs \
-    npm \
     curl \
     zip \
     unzip \
     git \
     supervisor \
     libpng-dev \
-    libjpeg-turbo-dev \
-    freetype-dev \
+    libjpeg-dev \
+    libfreetype6-dev \
     libzip-dev \
-    oniguruma-dev \
+    libonig-dev \
     libxml2-dev
 
-# konfigurasi gd
-RUN docker-php-ext-configure gd \
-    --with-freetype \
-    --with-jpeg
-
-# install extension php
+# install php extensions
 RUN docker-php-ext-install \
     pdo_mysql \
-    mysqli \
     mbstring \
-    tokenizer \
-    xml \
-    ctype \
     bcmath \
     gd \
     zip \
@@ -52,7 +41,7 @@ COPY . .
 RUN chmod -R 775 storage bootstrap/cache
 RUN chown -R www-data:www-data storage bootstrap/cache
 
-# nginx dan supervisor
+# nginx & supervisor
 COPY docker/nginx.conf /etc/nginx/nginx.conf
 COPY docker/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
