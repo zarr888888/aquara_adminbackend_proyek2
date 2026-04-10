@@ -94,7 +94,7 @@ jobs:
             echo "⏳ Menunggu database siap..."
 
             until docker compose exec -T db mysqladmin ping -h "localhost" --silent; do
-              sleep 2
+              sleep 25
             done
 
             echo "🗄️ Running migration..."
