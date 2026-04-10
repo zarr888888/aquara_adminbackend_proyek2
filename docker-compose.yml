@@ -1,4 +1,4 @@
-version: '3.8'
+version: "3.8"
 
 services:
 
@@ -21,14 +21,21 @@ services:
     restart: always
     environment:
       MYSQL_DATABASE: aquara_proyek2
+      MYSQL_USER: laravel
+      MYSQL_PASSWORD: laravel123
       MYSQL_ROOT_PASSWORD: rootpasswordharusnyaunik
     volumes:
       - db_data:/var/lib/mysql
     networks:
       - app-network
-
-networks:
-  app-network:
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
 volumes:
   db_data:
+
+networks:
+  app-network:
