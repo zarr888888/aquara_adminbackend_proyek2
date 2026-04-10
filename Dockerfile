@@ -1,3 +1,4 @@
+# Stage 1 - Install composer dependencies
 FROM composer:2 AS builder
 
 WORKDIR /app
@@ -10,15 +11,16 @@ RUN composer install \
     --no-interaction \
     --no-progress \
     --no-scripts \
+    --optimize-autoloader \
     --ignore-platform-req=ext-intl
 
 COPY . .
 
+
+# Stage 2 - PHP runtime
 FROM php:8.3-fpm-alpine
 
 RUN apk add --no-cache \
-    $PHPIZE_DEPS \
-    pkgconfig \
     libpng-dev \
     libzip-dev \
     oniguruma-dev \
@@ -34,6 +36,11 @@ RUN docker-php-ext-install \
 WORKDIR /var/www/html
 
 COPY --from=builder /app /var/www/html
+
+# Laravel optimization
+RUN php artisan config:clear && \
+    php artisan route:clear && \
+    php artisan view:clear
 
 RUN chown -R www-data:www-data storage bootstrap/cache
 
