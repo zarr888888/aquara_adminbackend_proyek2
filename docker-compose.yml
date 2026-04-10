@@ -7,7 +7,7 @@ services:
     ports:
       - "8176:8000"
     env_file:
-      - ./.env:/var/www/html/.env
+      - .env
     depends_on:
       - db
     networks:
