@@ -94,9 +94,19 @@ jobs:
             docker compose up -d --build
 
             echo "⏳ Menunggu container siap..."
-            sleep 30
+            sleep 15
+
+            echo "🗄️ Menunggu database benar-benar siap..."
+            until docker compose exec -T db mysqladmin ping -h "localhost" --silent; do
+              echo "Database belum siap, menunggu..."
+              sleep 5
+            done
 
             echo "🗄️ Running migration..."
-            docker compose exec -T app php artisan migrate --force --no-interaction || true
+            docker compose exec -T app php artisan migrate --force --no-interaction
+
+            echo "🧹 Clear cache Laravel..."
+            docker compose exec -T app php artisan config:clear
+            docker compose exec -T app php artisan cache:clear
 
             echo "✅ Deployment selesai!"
