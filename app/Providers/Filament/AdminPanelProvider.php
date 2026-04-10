@@ -37,6 +37,12 @@ class AdminPanelProvider extends PanelProvider
                         'danger' => Color::Red,
                         'gray' => Color::Zinc,
             ])
+            ->plugins([
+                \BezhanSalleh\FilamentShield\FilamentShieldPlugin::make(),
+                \BezhanSalleh\FilamentExceptions\FilamentExceptionsPlugin::make(),
+                \Rmsramos\Activitylog\ActivitylogPlugin::make(),
+                \ShuvroRoy\FilamentSpatieLaravelBackup\FilamentSpatieLaravelBackupPlugin::make()
+            ])
             ->spa()
             ->darkMode(true)
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\\Filament\\Resources')

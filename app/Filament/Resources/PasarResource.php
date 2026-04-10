@@ -91,7 +91,7 @@ class PasarResource extends Resource
                 //
             ])
             ->actions([
-                \Filament\Tables\Actions\EditAction::make(),
+                \Filament\Tables\Actions\ViewAction::make(),
                 \Filament\Tables\Actions\DeleteAction::make(),
             ])
             ->bulkActions([
@@ -106,6 +106,16 @@ class PasarResource extends Resource
         return [
             //
         ];
+    }
+
+    public static function canCreate(): bool
+    {
+        return false;
+    }
+
+    public static function canEdit(\Illuminate\Database\Eloquent\Model $record): bool
+    {
+        return false;
     }
 
     public static function getPages(): array
