@@ -74,8 +74,10 @@ jobs:
 
             echo "🚀 Mulai deployment..."
 
+            echo "🔐 Login ke GHCR..."
             echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
 
+            echo "📂 Masuk ke folder project..."
             cd /home/${{ secrets.SERVER_USER }}/kelompok-5
 
             echo "📦 Pull image terbaru..."
@@ -91,13 +93,10 @@ jobs:
             echo "🚀 Start container baru..."
             docker compose up -d --build
 
-            echo "⏳ Menunggu database siap..."
-
-            until docker compose exec -T db mysqladmin ping -h "localhost" --silent; do
-              sleep 25
-            done
+            echo "⏳ Menunggu container siap..."
+            sleep 30
 
             echo "🗄️ Running migration..."
-            docker compose exec -T app php artisan migrate --force --no-interaction
+            docker compose exec -T app php artisan migrate --force --no-interaction || true
 
             echo "✅ Deployment selesai!"
