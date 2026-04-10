@@ -23,9 +23,6 @@ jobs:
       contents: read
       packages: write
 
-    outputs:
-      image: ${{ steps.meta.outputs.tags }}
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -72,6 +69,7 @@ jobs:
           key: ${{ secrets.SERVER_SSH_KEY }}
           port: ${{ secrets.SERVER_PORT }}
           script: |
+
             set -e
 
             echo "🚀 Mulai deployment..."
@@ -93,8 +91,11 @@ jobs:
             echo "🚀 Start container baru..."
             docker compose up -d --build
 
-            echo "⏳ Menunggu container siap..."
-            sleep 15
+            echo "⏳ Menunggu database siap..."
+
+            until docker compose exec -T db mysqladmin ping -h "localhost" --silent; do
+              sleep 2
+            done
 
             echo "🗄️ Running migration..."
             docker compose exec -T app php artisan migrate --force --no-interaction
