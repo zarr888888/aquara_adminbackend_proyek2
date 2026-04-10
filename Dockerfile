@@ -34,7 +34,12 @@ WORKDIR /var/www/html
 
 COPY --from=builder /app /var/www/html
 
-RUN chown -R www-data:www-data storage bootstrap/cache
+RUN mkdir -p storage/framework/cache \
+    storage/framework/sessions \
+    storage/framework/views \
+    storage/logs \
+    bootstrap/cache && \
+    chown -R www-data:www-data storage bootstrap/cache
 
 EXPOSE 8000
 
