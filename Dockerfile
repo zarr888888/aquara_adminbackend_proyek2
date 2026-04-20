@@ -22,19 +22,22 @@ RUN apk add --no-cache \
     libpng-dev \
     libzip-dev \
     oniguruma-dev \
+    icu-dev \
     bash
 
 RUN docker-php-ext-install \
     pdo_mysql \
     mbstring \
     bcmath \
-    zip
+    zip \
+    intl
 
 WORKDIR /var/www/html
 
 COPY --from=builder /app /var/www/html
 
-RUN mkdir -p storage/framework/cache \
+RUN mkdir -p \
+    storage/framework/cache \
     storage/framework/sessions \
     storage/framework/views \
     storage/logs \
