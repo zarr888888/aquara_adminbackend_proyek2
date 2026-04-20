@@ -10,19 +10,18 @@ RUN composer install \
     --no-interaction \
     --no-progress \
     --no-scripts \
+    --optimize-autoloader \
     --ignore-platform-req=ext-intl
 
 COPY . .
 
+
 FROM php:8.3-fpm-alpine
 
 RUN apk add --no-cache \
-    $PHPIZE_DEPS \
-    pkgconfig \
     libpng-dev \
     libzip-dev \
     oniguruma-dev \
-    icu-dev \
     bash
 
 RUN docker-php-ext-install \
@@ -35,7 +34,12 @@ WORKDIR /var/www/html
 
 COPY --from=builder /app /var/www/html
 
-RUN chown -R www-data:www-data storage bootstrap/cache
+RUN mkdir -p storage/framework/cache \
+    storage/framework/sessions \
+    storage/framework/views \
+    storage/logs \
+    bootstrap/cache && \
+    chown -R www-data:www-data storage bootstrap/cache
 
 EXPOSE 8000
 
