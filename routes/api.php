@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\ForumController;
 use App\Http\Controllers\Api\AiConsultationController;
 use App\Http\Controllers\Api\PasarController;
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\NotificationController;
 
 Route::get('/user', function (Request $request) {
     return $request->user();
@@ -34,6 +35,10 @@ Route::delete('/pasars/{id}', [PasarController::class, 'destroy']);
 Route::post('/pasars/{id}/update', [PasarController::class, 'update']);
 
 Route::post('/register', [AuthController::class, 'register']);
+Route::post('/register/send-otp', [AuthController::class, 'sendRegistrationOtp']); 
+Route::post('/register/verify-otp', [AuthController::class, 'verifyRegistrationOtp']); 
+Route::post('/lupa-password/send-otp', [AuthController::class, 'sendResetOtp']);
+Route::post('/lupa-password/verify', [AuthController::class, 'resetPasswordWithOtp']);
 Route::post('/login', [AuthController::class, 'login']);
 Route::post('/google-login', [AuthController::class, 'googleLogin']);
 Route::post('/send-otp-wa', [AuthController::class, 'sendOtpWhatsapp']);
@@ -44,6 +49,10 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/ubah-password', [AuthController::class, 'ubahPassword']);
     Route::post('/ubah-kontak', [AuthController::class, 'ubahKontak']);
     Route::delete('/hapus-akun', [AuthController::class, 'hapusAkun']);
+    Route::post('/ubah-kontak/send-otp', [AuthController::class, 'sendUbahKontakOtp']);
+    Route::post('/hapus-akun/send-otp', [AuthController::class, 'sendHapusAkunOtp']);
+    Route::get('/notifications', [NotificationController::class, 'index']);
+    Route::post('/notifications/{id}/read', [NotificationController::class, 'markAsRead']);
 });
 Route::get('/user/{id}', function($id) {
     $user = \App\Models\User::find($id);

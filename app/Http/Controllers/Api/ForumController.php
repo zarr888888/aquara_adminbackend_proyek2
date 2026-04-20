@@ -33,8 +33,44 @@ class ForumController extends Controller
             'user_id' => 'required', 'author_name' => 'required', 'content' => 'required',
             'image' => 'nullable|image|max:2048',
         ]);
+        
         $imagePath = $request->file('image') ? $request->file('image')->store('forum_images', 'public') : null;
-        CommunityPost::create(['user_id' => $request->user_id, 'author_name' => $request->author_name, 'content' => $request->content, 'image' => $imagePath]);
+        
+        $post = CommunityPost::create([
+            'user_id' => $request->user_id, 
+            'author_name' => $request->author_name, 
+            'content' => $request->content, 
+            'image' => $imagePath
+        ]);
+
+                \App\Models\Notification::create([
+            'user_id' => null,
+            'title' => '💬 Diskusi Baru di Forum AQUARA',
+            'message' => "{$request->author_name} bertanya: \"" . \Illuminate\Support\Str::limit($request->content, 40) . "\"",
+            'type' => 'forum',
+            'reference_id' => $post->id
+
+        ]);
+
+        // PELATUK FIREBASE: ADA POSTINGAN FORUM BARU!
+        try {
+            $firebase = (new \Kreait\Firebase\Factory)->withServiceAccount(storage_path('app/firebase-auth.json'));
+            $messaging = $firebase->createMessaging();
+            
+            $pesanSingkat = \Illuminate\Support\Str::limit($request->content, 40);
+
+            $message = \Kreait\Firebase\Messaging\CloudMessage::new()
+                ->withNotification(\Kreait\Firebase\Messaging\Notification::create(
+                    '💬 Diskusi Baru di Forum AQUARA',
+                    "{$request->author_name} bertanya: \"{$pesanSingkat}\". Yuk bantu jawab!"
+                ))
+                ->withTopic('all_users');
+
+            $messaging->send($message);
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('FCM Error Forum: ' . $e->getMessage());
+        }
+
         return response()->json(['success' => true]);
     }
 
@@ -59,7 +95,15 @@ class ForumController extends Controller
     public function destroy($id)
     {
         $post = CommunityPost::find($id);
-        if ($post) { $post->delete(); return response()->json(['success' => true]); }
+        
+        if ($post) { 
+            \App\Models\Notification::where('type', 'forum')->where('reference_id', $id)->delete();
+            
+            $post->delete(); 
+            
+            return response()->json(['success' => true]); 
+        }
+        
         return response()->json(['success' => false], 404);
     }
 

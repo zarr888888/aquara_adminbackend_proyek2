@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Mail;
 
 class AuthController extends Controller
 {
@@ -25,16 +26,103 @@ class AuthController extends Controller
             'email' => $request->email,
             'phone' => $request->phone,
             'password' => Hash::make($request->password),
+            // email_verified_at otomatis null, menandakan belum verifikasi
         ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Berhasil mendaftar! Silakan lakukan verifikasi OTP.',
+            'data' => $user
+        ], 201);
+    }
+
+    public function sendRegistrationOtp(Request $request)
+    {
+        $request->validate([
+            'login_id' => 'required|string', 
+            'method' => 'required|in:wa,email'
+        ]);
+
+        $loginType = filter_var($request->login_id, FILTER_VALIDATE_EMAIL) ? 'email' : 'phone';
+        $user = User::where($loginType, $request->login_id)->first();
+
+        if (!$user) {
+            return response()->json(['success' => false, 'message' => 'Pengguna tidak ditemukan.'], 404);
+        }
+
+        $otp = rand(100000, 999999);
+        $user->otp = $otp;
+        $user->otp_expired_at = now()->addMinutes(5);
+        $user->save();
+
+        if ($request->method === 'wa') {
+            try {
+                $curl = curl_init();
+                curl_setopt_array($curl, array(
+                    CURLOPT_URL => 'https://api.fonnte.com/send',
+                    CURLOPT_RETURNTRANSFER => true,
+                    CURLOPT_CUSTOMREQUEST => 'POST',
+                    CURLOPT_POSTFIELDS => array(
+                        'target' => $user->phone,
+                        'message' => "*AQUARA REGISTRASI*\n\nKode OTP Anda adalah: *$otp*\n\nJangan berikan kode ini kepada siapapun. Berlaku 5 menit.",
+                    ),
+                    CURLOPT_HTTPHEADER => array(
+                        'Authorization: fRRqe1s757GduhxXCMfh'
+                    ),
+                ));
+                curl_exec($curl);
+                curl_close($curl);
+            } catch (\Exception $e) {
+                return response()->json(['success' => false, 'message' => 'Gagal mengirim WA.'], 500);
+            }
+        } else {
+            try {
+                Mail::raw("Halo {$user->name},\n\nKode OTP Verifikasi Pendaftaran AQUARA Anda adalah: $otp\n\nKode ini berlaku selama 5 menit. Jangan berikan kepada siapapun.", function ($message) use ($user) {
+                    $message->to($user->email)
+                            ->subject('Kode OTP Verifikasi AQUARA');
+                });
+            } catch (\Exception $e) {
+                return response()->json(['success' => false, 'message' => 'Gagal mengirim Email. Pastikan konfigurasi SMTP di .env benar.'], 500);
+            }
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Kode OTP berhasil dikirim via ' . strtoupper($request->method)
+        ], 200);
+    }
+
+    public function verifyRegistrationOtp(Request $request)
+    {
+        $request->validate([
+            'login_id' => 'required|string',
+            'otp' => 'required|string'
+        ]);
+
+        $loginType = filter_var($request->login_id, FILTER_VALIDATE_EMAIL) ? 'email' : 'phone';
+        $user = User::where($loginType, $request->login_id)->first();
+
+        if (!$user || (string)$user->otp !== (string)$request->otp) {
+            return response()->json(['success' => false, 'message' => 'Kode OTP salah!'], 401);
+        }
+
+        if (now()->greaterThan($user->otp_expired_at)) {
+            return response()->json(['success' => false, 'message' => 'Kode OTP kadaluarsa. Minta ulang kode baru.'], 401);
+        }
+
+        $user->email_verified_at = now();
+        $user->otp = null;
+        $user->otp_expired_at = null;
+        $user->save();
 
         $token = $user->createToken('auth_token')->plainTextToken;
 
         return response()->json([
             'success' => true,
-            'message' => 'Berhasil mendaftar!',
+            'message' => 'Verifikasi Berhasil! Selamat datang di AQUARA.',
             'data' => $user,
             'token' => $token
-        ], 201);
+        ], 200);
     }
 
     public function login(Request $request)
@@ -47,8 +135,14 @@ class AuthController extends Controller
         $loginType = filter_var($request->login_id, FILTER_VALIDATE_EMAIL) ? 'email' : 'phone';
 
         if (Auth::attempt([$loginType => $request->login_id, 'password' => $request->password])) {
-            
             $user = User::where($loginType, $request->login_id)->first();
+            
+            if (is_null($user->email_verified_at)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Akun Anda belum diverifikasi OTP. Silakan verifikasi terlebih dahulu.'
+                ], 403);
+            }
             
             $token = $user->createToken('auth_token')->plainTextToken;
 
@@ -133,34 +227,40 @@ class AuthController extends Controller
     public function ubahKontak(Request $request)
     {
         $user = $request->user();
-
         $request->validate([
             'email' => 'nullable|email|unique:users,email,' . $user->id,
             'phone' => 'required|unique:users,phone,' . $user->id,
+            'otp'   => 'required|string' // SEKARANG WAJIB OTP
         ]);
+
+        if ((string)$user->otp !== (string)$request->otp || now()->greaterThan($user->otp_expired_at)) {
+            return response()->json(['success' => false, 'message' => 'Kode OTP salah atau kadaluarsa.'], 401);
+        }
 
         $user->email = $request->email;
         $user->phone = $request->phone;
+        $user->otp = null;
+        $user->otp_expired_at = null;
         $user->save();
 
-        return response()->json([
-            'success' => true, 
-            'message' => 'Email dan Nomor HP berhasil diperbarui!'
-        ], 200);
+        return response()->json(['success' => true, 'message' => 'Email dan Nomor HP berhasil diperbarui!'], 200);
     }
 
     public function hapusAkun(Request $request)
     {
         $user = $request->user();
-        
+        $request->validate([
+            'otp' => 'required|string' // SEKARANG WAJIB OTP
+        ]);
+
+        if ((string)$user->otp !== (string)$request->otp || now()->greaterThan($user->otp_expired_at)) {
+            return response()->json(['success' => false, 'message' => 'Kode OTP salah atau kadaluarsa.'], 401);
+        }
+
         $user->tokens()->delete();
-        
         $user->delete();
 
-        return response()->json([
-            'success' => true, 
-            'message' => 'Akun berhasil dihapus permanen.'
-        ], 200);
+        return response()->json(['success' => true, 'message' => 'Akun berhasil dihapus permanen.'], 200);
     }
 
     public function googleLogin(Request $request)
@@ -180,6 +280,7 @@ class AuthController extends Controller
                 'google_id' => $request->google_id,
                 'password'  => \Illuminate\Support\Facades\Hash::make(\Illuminate\Support\Str::random(24)), 
                 'phone'     => 'GGL-' . time() . rand(10, 99),
+                'email_verified_at' => now(),
             ]);
         } else {
             if (empty($user->google_id)) {
@@ -287,5 +388,178 @@ class AuthController extends Controller
             'data' => $user,
             'token' => $token
         ], 200);
+    }
+
+    public function sendResetOtp(Request $request)
+    {
+        $request->validate([
+            'login_id' => 'required|string',
+            'method' => 'required|in:wa,email'
+        ]);
+
+        $loginType = filter_var($request->login_id, FILTER_VALIDATE_EMAIL) ? 'email' : 'phone';
+        $user = User::where($loginType, $request->login_id)->first();
+
+        if (!$user) {
+            return response()->json(['success' => false, 'message' => 'Akun dengan kontak tersebut tidak ditemukan.'], 404);
+        }
+
+        $otp = rand(100000, 999999);
+        $user->otp = $otp;
+        $user->otp_expired_at = now()->addMinutes(5);
+        $user->save();
+
+        if ($request->method === 'wa') {
+            try {
+                $curl = curl_init();
+                curl_setopt_array($curl, array(
+                    CURLOPT_URL => 'https://api.fonnte.com/send',
+                    CURLOPT_RETURNTRANSFER => true,
+                    CURLOPT_CUSTOMREQUEST => 'POST',
+                    CURLOPT_POSTFIELDS => array(
+                        'target' => $user->phone,
+                        'message' => "*AQUARA LUPA PASSWORD*\n\nKode OTP Anda untuk mereset kata sandi adalah: *$otp*\n\nBerlaku 5 menit. Jangan berikan kode ini ke siapapun.",
+                    ),
+                    CURLOPT_HTTPHEADER => array('Authorization: fRRqe1s757GduhxXCMfh'),
+                ));
+                curl_exec($curl);
+                curl_close($curl);
+            } catch (\Exception $e) {
+                return response()->json(['success' => false, 'message' => 'Gagal mengirim WA.'], 500);
+            }
+        } else {
+            try {
+                \Illuminate\Support\Facades\Mail::raw("Halo {$user->name},\n\nKode OTP Anda untuk mereset kata sandi AQUARA adalah: $otp\n\nBerlaku selama 5 menit.", function ($message) use ($user) {
+                    $message->to($user->email)->subject('Kode OTP Reset Password AQUARA');
+                });
+            } catch (\Exception $e) {
+                return response()->json(['success' => false, 'message' => 'Gagal mengirim Email.'], 500);
+            }
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Kode OTP Reset Password dikirim via ' . strtoupper($request->method)
+        ], 200);
+    }
+
+    public function resetPasswordWithOtp(Request $request)
+    {
+        $request->validate([
+            'login_id' => 'required|string',
+            'otp' => 'required|string',
+            'new_password' => 'required|string|min:6'
+        ]);
+
+        $loginType = filter_var($request->login_id, FILTER_VALIDATE_EMAIL) ? 'email' : 'phone';
+        $user = User::where($loginType, $request->login_id)->first();
+
+        if (!$user || (string)$user->otp !== (string)$request->otp) {
+            return response()->json(['success' => false, 'message' => 'Kode OTP salah!'], 401);
+        }
+
+        if (now()->greaterThan($user->otp_expired_at)) {
+            return response()->json(['success' => false, 'message' => 'Kode OTP kadaluarsa. Silakan minta kode baru.'], 401);
+        }
+
+        $user->password = Hash::make($request->new_password);
+        $user->otp = null;
+        $user->otp_expired_at = null;
+        $user->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Kata sandi berhasil diubah! Silakan Login.'
+        ], 200);
+    }
+
+    // FUNGSI BARU: OTP UBAH KONTAK & HAPUS AKUN
+    public function sendUbahKontakOtp(Request $request)
+    {
+        $user = $request->user();
+        $request->validate([
+            'method' => 'required|in:wa,email',
+            'target_contact' => 'required|string'
+        ]);
+
+        $otp = rand(100000, 999999);
+        $user->otp = $otp;
+        $user->otp_expired_at = now()->addMinutes(5);
+        $user->save();
+
+        if ($request->method === 'wa') {
+            try {
+                $curl = curl_init();
+                curl_setopt_array($curl, array(
+                    CURLOPT_URL => 'https://api.fonnte.com/send',
+                    CURLOPT_RETURNTRANSFER => true,
+                    CURLOPT_CUSTOMREQUEST => 'POST',
+                    CURLOPT_POSTFIELDS => array(
+                        'target' => $request->target_contact,
+                        'message' => "*AQUARA KEAMANAN*\n\nKode OTP untuk mengubah kontak Anda adalah: *$otp*\n\nBerlaku 5 menit. Abaikan jika Anda tidak memintanya.",
+                    ),
+                    CURLOPT_HTTPHEADER => array('Authorization: fRRqe1s757GduhxXCMfh'),
+                ));
+                curl_exec($curl); curl_close($curl);
+            } catch (\Exception $e) {
+                return response()->json(['success' => false, 'message' => 'Gagal mengirim WA.'], 500);
+            }
+        } else {
+            try {
+                \Illuminate\Support\Facades\Mail::raw("Halo {$user->name},\n\nKode OTP Anda untuk mengubah kontak AQUARA adalah: $otp\n\nBerlaku selama 5 menit.", function ($message) use ($request) {
+                    $message->to($request->target_contact)->subject('Kode OTP Ubah Kontak AQUARA');
+                });
+            } catch (\Exception $e) {
+                return response()->json(['success' => false, 'message' => 'Gagal mengirim Email.'], 500);
+            }
+        }
+
+        return response()->json(['success' => true, 'message' => 'OTP dikirim ke ' . $request->target_contact], 200);
+    }
+
+    public function sendHapusAkunOtp(Request $request)
+    {
+        $user = $request->user();
+        $request->validate(['method' => 'required|in:wa,email']);
+
+        $otp = rand(100000, 999999);
+        $user->otp = $otp;
+        $user->otp_expired_at = now()->addMinutes(5);
+        $user->save();
+
+        $targetContact = $request->method === 'wa' ? $user->phone : $user->email;
+
+        if (!$targetContact) {
+            return response()->json(['success' => false, 'message' => 'Anda tidak memiliki ' . strtoupper($request->method) . ' yang terdaftar.'], 400);
+        }
+
+        if ($request->method === 'wa') {
+            try {
+                $curl = curl_init();
+                curl_setopt_array($curl, array(
+                    CURLOPT_URL => 'https://api.fonnte.com/send',
+                    CURLOPT_RETURNTRANSFER => true,
+                    CURLOPT_CUSTOMREQUEST => 'POST',
+                    CURLOPT_POSTFIELDS => array(
+                        'target' => $targetContact,
+                        'message' => "*AQUARA PERINGATAN HAPUS AKUN*\n\nKode OTP untuk MENGHAPUS PERMANEN akun Anda adalah: *$otp*\n\nJANGAN BERIKAN KODE INI KEPADA SIAPAPUN!",
+                    ),
+                    CURLOPT_HTTPHEADER => array('Authorization: fRRqe1s757GduhxXCMfh'),
+                ));
+                curl_exec($curl); curl_close($curl);
+            } catch (\Exception $e) {
+                return response()->json(['success' => false, 'message' => 'Gagal mengirim WA.'], 500);
+            }
+        } else {
+            try {
+                \Illuminate\Support\Facades\Mail::raw("Peringatan Hapus Akun AQUARA,\n\nKode OTP Anda untuk MENGHAPUS PERMANEN akun adalah: $otp\n\nJika ini bukan Anda, segera amankan akun Anda.", function ($message) use ($targetContact) {
+                    $message->to($targetContact)->subject('Peringatan: OTP Hapus Akun AQUARA');
+                });
+            } catch (\Exception $e) {
+                return response()->json(['success' => false, 'message' => 'Gagal mengirim Email.'], 500);
+            }
+        }
+
+        return response()->json(['success' => true, 'message' => 'OTP Hapus Akun dikirim ke ' . strtoupper($request->method)], 200);
     }
 }

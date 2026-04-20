@@ -36,7 +36,7 @@ class PasarController extends Controller
             $fotoPath = $request->file('foto')->store('pasar-fotos', 'public');
         }
 
-        $pasar = Pasar::create([
+        $pasar = \App\Models\Pasar::create([
             'user_id' => $request->user_id,
             'nama_ikan' => $request->nama_ikan,
             'harga' => $request->harga,
@@ -45,6 +45,34 @@ class PasarController extends Controller
             'lokasi' => $request->lokasi,
             'foto' => $fotoPath,
         ]);
+
+                \App\Models\Notification::create([
+            'user_id' => null,
+            'title' => '📢 Info Pasar AQUARA Terbaru!',
+            'message' => "Ada {$pasar->nama_ikan} nih! Harga Rp " . number_format($pasar->harga, 0, ',', '.') . ". Yuk cek!",
+            'type' => 'pasar',
+            'reference_id' => $pasar->id
+        ]);
+
+        // PELATUK FIREBASE: TEMBAKKAN NOTIFIKASI KE SEMUA HP!
+        try {
+            $firebase = (new \Kreait\Firebase\Factory)
+                ->withServiceAccount(storage_path('app/firebase-auth.json'));
+            
+            $messaging = $firebase->createMessaging();
+            $hargaFormat = number_format($pasar->harga, 0, ',', '.');
+
+            $message = \Kreait\Firebase\Messaging\CloudMessage::new()
+                ->withNotification(\Kreait\Firebase\Messaging\Notification::create(
+                    '📢 Info Pasar AQUARA Terbaru!',
+                    "Ada {$pasar->nama_ikan} nih! Harga Rp {$hargaFormat}. Yuk cek sekarang di aplikasi!"
+                ))
+                ->withTopic('info_pasar');
+
+            $messaging->send($message);
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('FCM Error: ' . $e->getMessage());
+        }
 
         return response()->json([
             'success' => true,
@@ -64,6 +92,8 @@ class PasarController extends Controller
         if ($pasar->foto) {
             \Illuminate\Support\Facades\Storage::disk('public')->delete($pasar->foto);
         }
+
+        \App\Models\Notification::where('type', 'pasar')->where('reference_id', $id)->delete();
 
         $pasar->delete();
 

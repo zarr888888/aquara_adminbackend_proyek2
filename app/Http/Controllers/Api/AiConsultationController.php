@@ -76,6 +76,29 @@ class AiConsultationController extends Controller
                 'raw_ai_response' => $aiTextResponse, 
             ]);
 
+                        \App\Models\Notification::create([
+                'user_id' => $request->user() ? $request->user()->id : null,
+                'title' => '🤖 Analisa AI AQUARA Selesai!',
+                'message' => 'Pakar AI telah mendeteksi kondisi tambak/ikan Anda. Cek sekarang!',
+                'type' => 'ai'
+            ]);
+
+            try {
+                $firebase = (new \Kreait\Firebase\Factory)->withServiceAccount(storage_path('app/firebase-auth.json'));
+                $messaging = $firebase->createMessaging();
+
+                $message = \Kreait\Firebase\Messaging\CloudMessage::new()
+                    ->withNotification(\Kreait\Firebase\Messaging\Notification::create(
+                        '🤖 Analisa AI AQUARA Selesai!',
+                        "Pakar AI telah mendeteksi kondisi tambak/ikan Anda. Cek hasil dan solusinya sekarang!"
+                    ))
+                    ->withTopic('all_users');
+
+                $messaging->send($message);
+            } catch (\Exception $e) {
+                \Illuminate\Support\Facades\Log::error('FCM Error AI: ' . $e->getMessage());
+            }
+
             return response()->json([
                 'success' => true,
                 'message' => 'Analisa AI berhasil!',
