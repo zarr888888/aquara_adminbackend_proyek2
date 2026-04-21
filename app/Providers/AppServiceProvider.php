@@ -28,6 +28,44 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        /**
+         * Super Admin bypass all permissions
+         */
+        Gate::before(function ($user, $ability) {
+            if ($user->hasRole('super_admin')) {
+                return true;
+            }
+        });
+
+        /**
+         * Register policies
+         */
+        Gate::policy(Activity::class, ActivityPolicy::class);
+        Gate::policy(Exception::class, ExceptionPolicy::class);
+
+        /**
+         * Hide some menu for non super admin
+         */
+        FilamentView::registerRenderHook(
+            PanelsRenderHook::HEAD_END,
+            function () {
+
+                /** @var \App\Models\User|null $user */
+                $user = Auth::user();
+
+                if ($user && !$user->hasRole('super_admin')) {
+                    return new HtmlString('
+                        <style>
+                            .fi-sidebar-group:has(a[href*="exceptions"]),
+                            .fi-sidebar-group:has(a[href*="backups"]) {
+                                display: none !important;
+                            }
+                        </style>
+                    ');
+                }
+
+                return '';
+            }
+        );
     }
 }
