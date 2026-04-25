@@ -39,7 +39,7 @@ Route::post('/register/send-otp', [AuthController::class, 'sendRegistrationOtp']
 Route::post('/register/verify-otp', [AuthController::class, 'verifyRegistrationOtp']); 
 Route::post('/lupa-password/send-otp', [AuthController::class, 'sendResetOtp']);
 Route::post('/lupa-password/verify', [AuthController::class, 'resetPasswordWithOtp']);
-Route::post('/login', [AuthController::class, 'login']);
+Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:5,1');
 Route::post('/google-login', [AuthController::class, 'googleLogin']);
 Route::post('/send-otp-wa', [AuthController::class, 'sendOtpWhatsapp']);
 Route::post('/verify-otp-wa', [AuthController::class, 'verifyOtpWhatsapp']);
