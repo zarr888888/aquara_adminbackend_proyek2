@@ -32,7 +32,7 @@ class AiConsultationController extends Controller
             \"water_quality_status\": \"Status Air atau Tidak Terdeteksi\",
             \"solution\": \"Langkah-langkah solusi penanganan di sini\"
         }";
-        $apiKey = env('GEMINI_API_KEY'); 
+        $apiKey = config('services.gemini.key');
         $url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=' . $apiKey;
 
         $response = Http::withoutVerifying()->withHeaders([
