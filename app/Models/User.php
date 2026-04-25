@@ -1,23 +1,24 @@
 <?php
 
 namespace App\Models;
+
+use Filament\Models\Contracts\FilamentUser;
+use Filament\Panel;
 use Spatie\Activitylog\Traits\LogsActivity;
 use Spatie\Activitylog\LogOptions;
 use Spatie\Permission\Traits\HasRoles;
-
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 
-class User extends Authenticatable
+class User extends Authenticatable implements FilamentUser
 {
-    /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasApiTokens, HasFactory, Notifiable, HasRoles;
+    use HasApiTokens, HasFactory, Notifiable, HasRoles, LogsActivity;
 
-    use LogsActivity;
-
+    /**
+     * Activity Log configuration
+     */
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()
@@ -27,8 +28,6 @@ class User extends Authenticatable
 
     /**
      * The attributes that are mass assignable.
-     *
-     * @var list<string>
      */
     protected $fillable = [
         'name',
@@ -36,14 +35,12 @@ class User extends Authenticatable
         'phone',
         'google_id',
         'password',
-        'foto_profil',    
-        'fokus_budidaya', 
+        'foto_profil',
+        'fokus_budidaya',
     ];
 
     /**
-     * The attributes that should be hidden for serialization.
-     *
-     * @var list<string>
+     * The attributes that should be hidden.
      */
     protected $hidden = [
         'password',
@@ -51,9 +48,7 @@ class User extends Authenticatable
     ];
 
     /**
-     * Get the attributes that should be cast.
-     *
-     * @return array<string, string>
+     * Cast attributes
      */
     protected function casts(): array
     {
@@ -61,5 +56,13 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
         ];
+    }
+
+    /**
+     * Allow user to access Filament Admin Panel
+     */
+    public function canAccessPanel(Panel $panel): bool
+    {
+        return true;
     }
 }

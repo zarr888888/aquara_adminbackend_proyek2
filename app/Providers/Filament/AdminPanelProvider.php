@@ -26,16 +26,16 @@ class AdminPanelProvider extends PanelProvider
             ->default()
             ->id('admin')
             ->path('admin')
-            ->brandLogo(asset('images/logo2.png')) 
-            ->brandLogoHeight('3rem')           
+            ->brandLogo(asset('images/logo2.png'))
+            ->brandLogoHeight('3rem')
             ->favicon(asset('images/logo.png'))
             ->login()
             ->colors([
-                        'primary' => '#009FE3', 
-                        'success' => '#8CC63F', 
-                        'warning' => '#F7941D',
-                        'danger' => Color::Red,
-                        'gray' => Color::Zinc,
+                'primary' => '#009FE3',
+                'success' => '#8CC63F',
+                'warning' => '#F7941D',
+                'danger' => Color::Red,
+                'gray' => Color::Zinc,
             ])
             ->plugins([
                 \BezhanSalleh\FilamentShield\FilamentShieldPlugin::make(),
@@ -43,7 +43,6 @@ class AdminPanelProvider extends PanelProvider
                 \Rmsramos\Activitylog\ActivitylogPlugin::make(),
                 \ShuvroRoy\FilamentSpatieLaravelBackup\FilamentSpatieLaravelBackupPlugin::make()
             ])
-            ->spa()
             ->darkMode(true)
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\\Filament\\Resources')
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\\Filament\\Pages')
