@@ -1,0 +1,41 @@
+name: AQUARA CI (Automated Testing)
+
+# Robot ini akan otomatis jalan setiap ada kodingan baru yang di-push ke branch main
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  laravel-tests:
+    runs-on: ubuntu-latest # Robot akan meminjam komputer Ubuntu dari GitHub
+
+    steps:
+    - name: 📥 Mengambil Kodingan AQUARA
+      uses: actions/checkout@v3
+
+    - name: 🐘 Memasang PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: '8.3' # Sesuaikan jika Komandan pakai versi PHP yang berbeda
+
+    - name: 📄 Menyiapkan File .env
+      run: php -r "file_exists('.env') || copy('.env.example', '.env');"
+
+    - name: 📦 Menginstal Dependencies (Vendor)
+      run: composer install -q --no-ansi --no-interaction --no-scripts --no-progress --prefer-dist
+
+    - name: 🔑 Membuat Application Key
+      run: php artisan key:generate
+
+    - name: 🗄️ Menyiapkan Database Bayangan (SQLite)
+      run: |
+        mkdir -p database
+        touch database/database.sqlite
+
+    - name: 🎯 MENJALANKAN PENGUJIAN OTOMATIS!
+      env:
+        DB_CONNECTION: sqlite
+        DB_DATABASE: database/database.sqlite
+      run: php artisan test
