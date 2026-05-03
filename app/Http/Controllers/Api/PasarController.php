@@ -67,7 +67,7 @@ class PasarController extends Controller
                     '📢 Info Pasar AQUARA Terbaru!',
                     "Ada {$pasar->nama_ikan} nih! Harga Rp {$hargaFormat}. Yuk cek sekarang di aplikasi!"
                 ))
-                ->withTopic('info_pasar');
+                ->withData(['type' => 'pasar'])->toTopic('info_pasar');
 
             $messaging->send($message);
         } catch (\Exception $e) {

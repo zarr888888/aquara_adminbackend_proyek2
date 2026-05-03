@@ -64,7 +64,7 @@ class ForumController extends Controller
                     '💬 Diskusi Baru di Forum AQUARA',
                     "{$request->author_name} bertanya: \"{$pesanSingkat}\". Yuk bantu jawab!"
                 ))
-                ->withTopic('all_users');
+                ->withData(['type' => 'forum'])->toTopic('all_users');
 
             $messaging->send($message);
         } catch (\Exception $e) {

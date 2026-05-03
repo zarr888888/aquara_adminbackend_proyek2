@@ -92,7 +92,7 @@ class AiConsultationController extends Controller
                         '🤖 Analisa AI AQUARA Selesai!',
                         "Pakar AI telah mendeteksi kondisi tambak/ikan Anda. Cek hasil dan solusinya sekarang!"
                     ))
-                    ->withTopic('all_users');
+                    ->withData(['type' => 'ai'])->toTopic('all_users');
 
                 $messaging->send($message);
             } catch (\Exception $e) {
