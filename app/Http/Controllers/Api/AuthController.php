@@ -279,9 +279,11 @@ class AuthController extends Controller
                 'email' => $request->email,
                 'google_id' => $request->google_id,
                 'password'  => \Illuminate\Support\Facades\Hash::make(\Illuminate\Support\Str::random(24)), 
-                'phone'     => 'GGL-' . time() . rand(10, 99),
-                'email_verified_at' => now(),
+                'phone'     => 'GL' . time(), 
             ]);
+            
+            $user->email_verified_at = now();
+            $user->save();
         } else {
             if (empty($user->google_id)) {
                 $user->update(['google_id' => $request->google_id]);
