@@ -30,6 +30,7 @@ class AdminPanelProvider extends PanelProvider
             ->brandLogoHeight('3rem')
             ->favicon(asset('images/logo.png'))
             ->login()
+	    ->passwordReset()
             ->colors([
                 'primary' => '#009FE3',
                 'success' => '#8CC63F',

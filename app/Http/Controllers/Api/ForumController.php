@@ -31,7 +31,7 @@ class ForumController extends Controller
     {
         $request->validate([
             'user_id' => 'required', 'author_name' => 'required', 'content' => 'required',
-            'image' => 'nullable|image|max:2048',
+            'image' => 'nullable|image|max:5120',
         ]);
         
         $imagePath = $request->file('image') ? $request->file('image')->store('forum_images', 'public') : null;
@@ -79,7 +79,7 @@ class ForumController extends Controller
         $post = CommunityPost::find($id);
         if (!$post) return response()->json(['success' => false, 'message' => 'Not found'], 404);
 
-        $request->validate(['content' => 'required', 'image' => 'nullable|image|max:2048']);
+        $request->validate(['content' => 'required', 'image' => 'nullable|image|max:10240']);
         
         $dataToUpdate = ['content' => $request->content];
 

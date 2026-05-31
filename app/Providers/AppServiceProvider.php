@@ -28,9 +28,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        /**
-         * Super Admin bypass all permissions
-         */
+        //\Illuminate\Support\Facades\URL::forceScheme('https');
+
         Gate::before(function ($user, $ability) {
             if ($user->hasRole('super_admin')) {
                 return true;
