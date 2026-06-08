@@ -35,7 +35,7 @@ class AiConsultationController extends Controller
         $apiKey = config('services.gemini.key');
         $url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=' . $apiKey;
 
-        $response = Http::withoutVerifying()->withHeaders([
+        $response = Http::timeout(120)->withoutVerifying()->withHeaders([
             'Content-Type' => 'application/json',
         ])->post($url, [
             'contents' => [
