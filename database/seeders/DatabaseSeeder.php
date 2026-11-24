@@ -20,18 +20,24 @@ class DatabaseSeeder extends Seeder
         $roleSuperAdmin = Role::firstOrCreate(['name' => 'super_admin', 'guard_name' => 'web']);
         $roleAdminDinas = Role::firstOrCreate(['name' => 'Admin Dinas', 'guard_name' => 'web']);
 
-        $superAdmin = User::create([
-            'name' => 'Developer AQUARA',
-            'email' => 'dev@aquara.com',
-            'password' => Hash::make('0808'), 
-        ]);
-        $superAdmin->assignRole($roleSuperAdmin);
-
-        $adminDinas = User::create([
-            'name' => 'Admin AQUARA',
-            'email' => 'admin@aquara.test',
-            'password' => Hash::make('0808'),
-        ]);
-        $adminDinas->assignRole($roleAdminDinas);
+        foreach (config('admin_seed') as $role => $credentials) {
+            if (empty($credentials['email'])) {
+                continue; // No implicit privileged accounts.
+            }
+            validator($credentials, ['email' => 'required|email', 'password' => 'required|string|min:16|max:128'])->validate();
+            $existing = User::where('email', $credentials['email'])->first();
+            if ($existing) {
+                if (! $existing->hasRole($role)) {
+                    throw new \RuntimeException('Seeder refuses to promote an existing account.');
+                }
+                continue; // Never reset existing passwords on rerun.
+            }
+            $user = User::create([
+                'name' => $role === 'super_admin' ? 'Administrator SAMUDERA' : 'Admin Dinas',
+                'email' => $credentials['email'],
+                'password' => Hash::driver('bcrypt')->make($credentials['password']),
+            ]);
+            $user->assignRole($role);
+        }
     }
 }

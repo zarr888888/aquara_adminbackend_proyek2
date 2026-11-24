@@ -23,7 +23,7 @@ class AiConsultationResource extends Resource
     {
         return $form
             ->schema([
-                Forms\Components\FileUpload::make('image_path')
+                \App\Support\CloudinaryFileUpload::make('image_path')
                     ->label('Foto Tambak/Ikan')
                     ->image()
                     ->directory('consultations')

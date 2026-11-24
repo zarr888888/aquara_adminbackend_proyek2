@@ -28,6 +28,26 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        \Illuminate\Support\Facades\RateLimiter::for('asisten-chat', function (\Illuminate\Http\Request $request) {
+            return \Illuminate\Cache\RateLimiting\Limit::perMinute(\App\Support\AsistenReply::REQUESTS_PER_MINUTE)
+                ->by('asisten-chat:user:'.$request->user()->getAuthIdentifier())
+                ->response(fn (\Illuminate\Http\Request $request, array $headers) => response()->json([
+                    'success' => false,
+                    'message' => 'Batas request Asisten tercapai. Silakan coba kembali nanti.',
+                    'data' => null,
+                ], 429, $headers));
+        });
+
+        \Illuminate\Support\Facades\RateLimiter::for('external-info', function (\Illuminate\Http\Request $request) {
+            return \Illuminate\Cache\RateLimiting\Limit::perMinute(\App\Support\ExternalInfo::REQUESTS_PER_MINUTE)
+                ->by('external-info:'.$request->ip())
+                ->response(fn (\Illuminate\Http\Request $request, array $headers) => response()->json([
+                    'success' => false,
+                    'message' => 'Terlalu banyak permintaan informasi. Silakan coba kembali nanti.',
+                    'data' => null,
+                ], 429, $headers));
+        });
+
         //\Illuminate\Support\Facades\URL::forceScheme('https');
 
         Gate::before(function ($user, $ability) {

@@ -19,9 +19,13 @@ class NotificationController extends Controller
         return response()->json(['success' => true, 'data' => $notifications]);
     }
 
-    public function markAsRead($id)
+    public function markAsRead(Request $request, $id)
     {
-        $notification = Notification::find($id);
+        $notification = Notification::where('user_id', $request->user()->id)->find($id);
+        if (! $notification && Notification::whereNull('user_id')->whereKey($id)->exists()) {
+            // Global notifications have no per-user read state in the existing schema.
+            return response()->json(['success' => true]);
+        }
         if ($notification) {
             $notification->update(['is_read' => true]);
             return response()->json(['success' => true]);

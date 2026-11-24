@@ -42,7 +42,24 @@ class CommunityPost extends Model
     protected static function boot() {
         parent::boot();
         static::deleting(function($post) {
-            if ($post->image) { Storage::disk('public')->delete($post->image); }
+            if (!$post->image) {
+                return;
+            }
+
+            // Foto baru (Fase 1) disimpan sebagai URL Cloudinary.
+            // Foto lama (sebelum Fase 1) masih berupa path relatif di disk `public`.
+            if (\App\Support\CloudinaryUrl::isCloudinaryUrl($post->image)) {
+                try {
+                    $path = \App\Support\CloudinaryUrl::extractPath($post->image);
+                    if ($path) {
+                        Storage::disk('cloudinary')->delete($path);
+                    }
+                } catch (\Throwable $e) {
+                    \Illuminate\Support\Facades\Log::error('Cloudinary Delete Error (Forum): ' . $e->getMessage());
+                }
+            } else {
+                Storage::disk('public')->delete($post->image);
+            }
         });
     }
 }

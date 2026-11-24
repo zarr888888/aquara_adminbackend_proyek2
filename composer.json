@@ -9,6 +9,7 @@
         "php": "^8.2",
         "bezhansalleh/filament-exceptions": "^3.0",
         "bezhansalleh/filament-shield": "^3.9",
+        "cloudinary-labs/cloudinary-laravel": "*",
         "filament/filament": "^3.2",
         "kreait/firebase-php": "^8.2",
         "laravel/framework": "^12.0",

@@ -50,6 +50,8 @@ class User extends Authenticatable implements FilamentUser
     protected $hidden = [
         'password',
         'remember_token',
+        'otp',
+        'otp_expired_at',
     ];
 
     /**
@@ -68,6 +70,6 @@ class User extends Authenticatable implements FilamentUser
      */
     public function canAccessPanel(Panel $panel): bool
     {
-        return true;
+        return $this->hasAnyRole(['Admin Dinas', 'super_admin']);
     }
 }

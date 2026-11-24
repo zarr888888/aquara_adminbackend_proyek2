@@ -9,13 +9,15 @@ use Illuminate\Support\Facades\Http;
 
 class AiConsultationController extends Controller
 {
+    use \App\Traits\UploadsToCloudinary;
     public function analyze(Request $request)
     {
         $request->validate([
             'image' => 'required|image|mimes:jpeg,png,jpg|max:15360',
         ]);
 
-        $imagePath = $request->file('image')->store('consultations', 'public');
+        $imagePath = $this->uploadFotoToCloudinary($request->file('image'), 'samudera/consultations');
+        abort_unless($imagePath, 503, 'Upload foto gagal.');
 
         $imagePathAsli = $request->file('image')->path();
         $base64Image = base64_encode(file_get_contents($imagePathAsli));
@@ -35,7 +37,7 @@ class AiConsultationController extends Controller
         $apiKey = config('services.gemini.key');
         $url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=' . $apiKey;
 
-        $response = Http::timeout(120)->withoutVerifying()->withHeaders([
+        $response = Http::timeout(120)->withHeaders([
             'Content-Type' => 'application/json',
         ])->post($url, [
             'contents' => [
@@ -78,7 +80,7 @@ class AiConsultationController extends Controller
 
                         \App\Models\Notification::create([
                 'user_id' => $request->user() ? $request->user()->id : null,
-                'title' => '🤖 Analisa AI AQUARA Selesai!',
+                'title' => '🤖 Analisa AI SAMUDERA Selesai!',
                 'message' => 'Pakar AI telah mendeteksi kondisi tambak/ikan Anda. Cek sekarang!',
                 'type' => 'ai'
             ]);
@@ -89,7 +91,7 @@ class AiConsultationController extends Controller
 
                 $message = \Kreait\Firebase\Messaging\CloudMessage::new()
                     ->withNotification(\Kreait\Firebase\Messaging\Notification::create(
-                        '🤖 Analisa AI AQUARA Selesai!',
+                        '🤖 Analisa AI SAMUDERA Selesai!',
                         "Pakar AI telah mendeteksi kondisi tambak/ikan Anda. Cek hasil dan solusinya sekarang!"
                     ))
                     ->withData(['type' => 'ai'])->toTopic('all_users');
@@ -111,13 +113,13 @@ class AiConsultationController extends Controller
             if ($statusCode == 429) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Sistem AQUARA sedang sibuk melayani banyak petani. Antrean sistem sedang penuh, silakan coba lagi dalam 1 menit ya!'
+                    'message' => 'Sistem SAMUDERA sedang sibuk melayani banyak petani. Antrean sistem sedang penuh, silakan coba lagi dalam 1 menit ya!'
                 ], 429);
             }
 
             return response()->json([
                 'success' => false,
-                'message' => 'Maaf, Sistem AQUARA sedang mengalami gangguan jaringan. Silakan periksa koneksi internet Anda dan coba lagi. (Kode: ' . $statusCode . ')'
+                'message' => 'Maaf, Sistem SAMUDERA sedang mengalami gangguan jaringan. Silakan periksa koneksi internet Anda dan coba lagi. (Kode: ' . $statusCode . ')'
             ], 500);
         }
     }

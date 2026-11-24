@@ -1,0 +1,13 @@
+# RC 24 November — delta kontrak dan bukti yang dibutuhkan
+
+`PUT /api/pre-order/{id}/confirmation`: Sanctum, tanpa body/query, seller produk terkait dan bukan pembeli. Konfirmasi idempoten; 200 success/data dengan `confirmed_at` terisi dan `can_confirm:false`. Aksi tidak mengubah `status_bayar`, harga, atau stok. Pesanan di luar hak seller: 404; parameter yang disisipkan: 422. Detail GET menyertakan boolean `can_confirm`. `confirmed_at:null` berarti belum dikonfirmasi. Pembeli tidak boleh memesan produknya sendiri. Pembayaran langsung di luar aplikasi; status bayar bukan bukti transfer. Eceran memakai kontrak retail-orders terpisah; lihat docs/API_DOCUMENTATION.md.
+
+TPI: Admin Dinas/super_admin membuat entri verifikasi baru lewat Filament, menyimpan identitas fasilitas, bukti kecocokan, sumber HTTPS KKP/Pemkab, titik, waktu dan pemeriksa. Entri terbaru menentukan pin. Untuk mencabut, buat entri tidak terbit dengan alasan. Tanpa verifikasi tidak ada pin. Bukti harus mengidentifikasi titik TPI, bukan centroid wilayah. Tidak ada koordinat produksi dalam migrasi.
+
+Gombyang: tetapkan GOMBYANG_PROVIDER=groq dan GROQ_API_KEY melalui secrets. Tidak ada fallback simulasi pada production. URL/model tetap ditentukan server, tanpa log verifikasi gladi.
+
+Uji eksternal sebelum distribusi: siapkan cloud khusus kandidat, kredensial hanya di backend, akun Admin Dinas tes dan akun mobile tes. Unggah satu PNG nonpribadi berlabel LATIHAN via Filament Posts, catat ID post, buka lagi dari admin, cocokkan URL HTTPS di GET posts dan tampilkan gambar pada mobile tanpa Bearer ke CDN. Hapus media uji hanya setelah bukti dicatat dan hanya untuk ID milik pengujian.
+
+OTP: penanggung jawab menyetujui kanal dan penerima milik penguji lewat kanal privat. Gunakan provider kandidat tanpa logging isi pesan. Registrasi satu akun tes, minta satu OTP, penerima memasukkan sendiri, login dan logout. Catat waktu, kanal, status HTTP, hasil kirim dan penerimaan tanpa alamat/nomor, OTP atau token. Jangan gunakan penerima dari DB utama ataupun gladi.
+
+Helipod: Dockerfile baru memakai Apache pada PORT, satu worker dan satu scheduler. Pisahkan DB dari web. Jalankan tests/Support/run-candidate.ps1 pada Windows sebagai proses tersendiri; menggunakan container loopback, dump dan restore schema terpisah lalu membandingkan semua isi tabel. Ini bukan bukti backup offsite terjadwal atau restore arsip terenkripsi produksi. Sebelum go-live pasang disk backup di luar volume DB, kunci arsip privat dan retensi; uji pulihkan arsip dari sana. Jangan menganggap disk lokal sementara sebagai backup luar pod.

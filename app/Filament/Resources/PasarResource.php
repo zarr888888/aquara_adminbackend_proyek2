@@ -39,9 +39,35 @@ class PasarResource extends Resource
                 \Filament\Forms\Components\TextInput::make('harga')
                     ->required()
                     ->numeric()
+                    ->minValue(0)
                     ->prefix('Rp')
                     ->suffix('/ Kg'),
-                
+
+                // Kolom Stok (Fase 1 - Katalog Produk)
+                \Filament\Forms\Components\TextInput::make('stok')
+                    ->label('Stok')
+                    ->required()
+                    ->numeric()
+                    ->minValue(0)
+                    ->default(0)
+                    ->suffix('Kg'),
+
+                // Kolom Kategori (Fase 1 - Katalog Produk)
+                \Filament\Forms\Components\Select::make('kategori')
+                    ->label('Kategori Komoditas')
+                    ->options(\App\Models\Pasar::KATEGORI_OPTIONS)
+                    ->default('tawar')
+                    ->required()
+                    ->native(false),
+
+                // Kolom Tipe Penjualan (Fase 1 - Katalog Produk)
+                \Filament\Forms\Components\Select::make('tipe_penjualan')
+                    ->label('Tipe Penjualan')
+                    ->options(\App\Models\Pasar::TIPE_PENJUALAN_OPTIONS)
+                    ->default('eceran')
+                    ->required()
+                    ->native(false),
+
                 // Kolom WA
                 \Filament\Forms\Components\TextInput::make('nomor_wa')
                     ->label('Nomor WhatsApp Penjual')
@@ -62,7 +88,7 @@ class PasarResource extends Resource
                     ->columnSpanFull(),
                 
                 // Kolom Foto
-                \Filament\Forms\Components\FileUpload::make('foto')
+                \App\Support\CloudinaryFileUpload::make('foto')
                     ->image()
                     ->directory('pasar-fotos')
                     ->columnSpanFull(),
@@ -84,11 +110,40 @@ class PasarResource extends Resource
                 \Filament\Tables\Columns\TextColumn::make('harga')
                     ->money('idr') 
                     ->sortable(),
+                \Filament\Tables\Columns\TextColumn::make('stok')
+                    ->label('Stok')
+                    ->suffix(' Kg')
+                    ->sortable(),
+                \Filament\Tables\Columns\TextColumn::make('kategori')
+                    ->label('Kategori')
+                    ->badge()
+                    ->formatStateUsing(fn (string $state): string => \App\Models\Pasar::KATEGORI_OPTIONS[$state] ?? $state)
+                    ->color(fn (string $state): string => match ($state) {
+                        'tawar' => 'info',
+                        'laut' => 'primary',
+                        'olahan' => 'success',
+                        default => 'gray',
+                    })
+                    ->sortable(),
+                \Filament\Tables\Columns\TextColumn::make('tipe_penjualan')
+                    ->label('Tipe Jual')
+                    ->badge()
+                    ->formatStateUsing(fn (string $state): string => \App\Models\Pasar::TIPE_PENJUALAN_OPTIONS[$state] ?? $state)
+                    ->color(fn (string $state): string => match ($state) {
+                        'grosir' => 'warning',
+                        default => 'gray',
+                    })
+                    ->sortable(),
                 \Filament\Tables\Columns\TextColumn::make('lokasi')
                     ->searchable(),
             ])
             ->filters([
-                //
+                \Filament\Tables\Filters\SelectFilter::make('kategori')
+                    ->label('Kategori')
+                    ->options(\App\Models\Pasar::KATEGORI_OPTIONS),
+                \Filament\Tables\Filters\SelectFilter::make('tipe_penjualan')
+                    ->label('Tipe Penjualan')
+                    ->options(\App\Models\Pasar::TIPE_PENJUALAN_OPTIONS),
             ])
             ->actions([
                 \Filament\Tables\Actions\ViewAction::make(),

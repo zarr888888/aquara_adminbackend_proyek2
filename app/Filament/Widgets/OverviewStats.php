@@ -16,7 +16,7 @@ class OverviewStats extends BaseWidget
     {
         return [
             Stat::make('Total Pembudidaya', User::count())
-                ->description('Seluruh pengguna terdaftar di AQUARA')
+                ->description('Seluruh pengguna terdaftar di SAMUDERA')
                 ->descriptionIcon('heroicon-m-users')
                 ->color('primary') 
                 ->chart([7, 2, 10, 3, 15, 4, 17]),

@@ -29,7 +29,7 @@ class PostResource extends Resource
                 Forms\Components\Textarea::make('content')
                     ->required()
                     ->columnSpanFull(),
-                Forms\Components\FileUpload::make('image')
+                \App\Support\CloudinaryFileUpload::make('image')
                     ->image(),
                 Forms\Components\TextInput::make('category')
                     ->required()

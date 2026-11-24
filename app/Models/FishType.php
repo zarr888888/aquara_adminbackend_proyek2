@@ -23,7 +23,9 @@ class FishType extends Model
     protected function imageUrl(): Attribute
     {
         return Attribute::make(
-            get: fn () => $this->image ? url('storage/' . $this->image) : null,
+            get: fn () => \App\Support\CloudinaryUrl::isCloudinaryUrl($this->image)
+                ? $this->image
+                : ($this->image ? url('storage/' . $this->image) : null),
         );
     }
 }

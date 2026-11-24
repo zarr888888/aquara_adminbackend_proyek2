@@ -26,9 +26,10 @@ class AdminPanelProvider extends PanelProvider
             ->default()
             ->id('admin')
             ->path('admin')
-            ->brandLogo(asset('images/logo2.png'))
+            ->brandName('SAMUDERA')
+            ->brandLogo(asset('images/SAMUDERA_FIX_LOGO.png'))
             ->brandLogoHeight('3rem')
-            ->favicon(asset('images/logo.png'))
+            ->favicon(asset('images/SAMUDERA_FIX_LOGO.jpg'))
             ->login()
 	    ->passwordReset()
             ->colors([

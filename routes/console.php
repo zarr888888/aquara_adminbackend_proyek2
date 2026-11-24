@@ -7,4 +7,5 @@ use Illuminate\Support\Facades\Schedule;
 Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
 })->purpose('Display an inspiring quote');
-Schedule::command('backup:run')->daily();
+Schedule::command('backup:run --only-db')->daily()->withoutOverlapping();
+Schedule::command('backup:clean')->dailyAt('03:30')->withoutOverlapping();

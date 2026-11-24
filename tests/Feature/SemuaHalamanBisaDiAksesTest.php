@@ -9,13 +9,14 @@ class SemuaHalamanBisaDiAksesTest extends TestCase
 {
 
     use RefreshDatabase;
+
     /**
      * TEST 1: Pastikan kalau ada yang buka web utama, langsung dilempar (302).
      */
     public function test_halaman_utama_redirect_ke_admin(): void
     {
         $response = $this->get('/');
-        $response->assertStatus(302); 
+        $response->assertRedirect('/admin');
     }
 
     /**
@@ -29,9 +30,9 @@ class SemuaHalamanBisaDiAksesTest extends TestCase
     }
 
     /**
-     * TEST 3: Pastikan semua API publik (GET) merespon dengan baik (200 OK).
+     * TEST 3: Pastikan API data menolak tamu tanpa token (401 Unauthorized).
      */
-    public function test_semua_api_publik_bisa_diakses(): void
+    public function test_api_data_memerlukan_autentikasi(): void
     {
         $daftarApi = [
             '/api/fish-types',
@@ -42,8 +43,8 @@ class SemuaHalamanBisaDiAksesTest extends TestCase
         ];
 
         foreach ($daftarApi as $url) {
-            $response = $this->get($url);
-            $response->assertStatus(200);
+            $response = $this->getJson($url);
+            $response->assertUnauthorized();
         }
     }
 }

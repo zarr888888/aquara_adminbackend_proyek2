@@ -29,6 +29,8 @@ return [
     */
 
     'disks' => [
+        // A dedicated private volume (not the application or database volume).
+        'rc_backup' => ['driver'=>'local', 'root'=>'/mnt/samudera-backup', 'throw'=>true],
 
         'local' => [
             'driver' => 'local',
@@ -58,6 +60,26 @@ return [
             'use_path_style_endpoint' => env('AWS_USE_PATH_STYLE_ENDPOINT', false),
             'throw' => false,
             'report' => false,
+        ],
+
+        /*
+        |----------------------------------------------------------------------
+        | Cloudinary Disk (Fase 1 - SAMUDERA)
+        |----------------------------------------------------------------------
+        |
+        | Digunakan untuk seluruh upload media (foto) di aplikasi SAMUDERA agar
+        | tidak hilang akibat ephemeral filesystem Heroku. Kredensial diambil
+        | dari CLOUDINARY_URL (format: cloudinary://API_KEY:API_SECRET@CLOUD_NAME).
+        |
+        */
+        'cloudinary' => [
+            'driver' => 'cloudinary',
+            'key' => env('CLOUDINARY_KEY'),
+            'secret' => env('CLOUDINARY_SECRET'),
+            'cloud' => env('CLOUDINARY_CLOUD_NAME'),
+            'url' => env('CLOUDINARY_URL'),
+            'secure' => (bool) env('CLOUDINARY_SECURE', true),
+            'prefix' => env('CLOUDINARY_PREFIX'),
         ],
 
     ],

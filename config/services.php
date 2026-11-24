@@ -1,6 +1,11 @@
 <?php
 
 return [
+    'gombyang_provider' => env('GOMBYANG_PROVIDER', 'openai'),
+    'groq' => ['key' => env('GROQ_API_KEY')],
+    'openai' => ['key' => env('OPENAI_API_KEY')],
+    'fonnte' => ['token' => env('FONNTE_TOKEN')],
+    'google' => ['client_id' => env('GOOGLE_CLIENT_ID')],
 
     /*
     |--------------------------------------------------------------------------

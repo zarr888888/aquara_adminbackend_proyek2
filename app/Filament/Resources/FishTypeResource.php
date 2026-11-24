@@ -29,7 +29,7 @@ class FishTypeResource extends Resource
                     Forms\Components\TextInput::make('name')
                         ->label('Nama Jenis Ikan')
                         ->required(),
-                    Forms\Components\FileUpload::make('image')
+                    \App\Support\CloudinaryFileUpload::make('image')
                         ->label('Foto Ikan')
                         ->directory('fish-images'),
                 ]),
